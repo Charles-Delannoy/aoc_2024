@@ -13,6 +13,13 @@ class LocationsList
     end
   end
 
+  def similarity_score 
+    occurences = @second_list.group_by(&:itself)
+    @first_list.reduce(0) do |score, location_id|
+      score += occurences[location_id] ? location_id * occurences[location_id].size : 0
+    end
+  end
+
   private 
 
   def distance(left_id, right_id)
@@ -20,6 +27,7 @@ class LocationsList
   end
 end
 
-location_lists = InputParser.array("day1/input.txt", integers: true).transpose.map(&:sort)
-
-pp LocationsList.new(location_lists).total_distance
+input_lists = InputParser.array("day1/input.txt", integers: true).transpose.map(&:sort)
+location_list = LocationsList.new(input_lists)
+puts "Part 1: #{location_list.total_distance}"
+puts "Part 2: #{location_list.similarity_score}"
