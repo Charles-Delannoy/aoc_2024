@@ -7,6 +7,11 @@ class InputParser
       input
     end
 
+    def string(file_path)
+      File.read("#{__dir__}/#{file_path}")
+    end
+    
+
     def cast_to_integers(array, separator)
       array.map! { |pair| pair.split(separator).map(&:to_i) }
     end
