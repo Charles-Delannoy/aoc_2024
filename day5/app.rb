@@ -90,4 +90,3 @@ updates_rules_checker = UpdatesRulesChecker.new(rules, updates)
 
 puts "Part 1: #{updates_rules_checker.middle_page_sum(correct_updates: true)}"
 puts "Part 2: #{updates_rules_checker.middle_page_sum(correct_updates: false)}"
-puts "Part 2: #{updates_rules_checker.middle_page_sum(correct_updates: false)}"
