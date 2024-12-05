@@ -4,68 +4,19 @@ class UpdatesRulesChecker
   attr_reader :rules
   def initialize(rules, updates)
     @rules = rules_per_number(rules) 
-    @updates = updates
-  end
-
-  def wrong_middle_page_sum
-    filter_update_by(correct_order: false).map do |update|
-      fixed_update = fix(update)
-      middle_page(fixed_update)
-    end.sum
-  end
-
-  def fix(update)
-    until correct_order?(update)
-      wrong_number = find_first_wrong_number(update)
-      current_index = update.index(wrong_number)
-      new_index = min_indexe(@rules[wrong_number], update)
-      update.insert(new_index, update.delete_at(current_index))
-    end
-    update
-  end
-
-  def min_indexe(numbers, update)
-    numbers.map { |number| update.index(number) }.compact.min
+    @updates = instanciate_updates(updates)
   end
 
   def middle_page_sum(correct_updates:)
-    updates = correct_updates ? filter_update_by(correct_order: true) : filter_update_by(correct_order: false)
-    return filter_update_by(correct_order: true).map { |update| middle_page(update) }.sum if correct_updates
-
-  end
-  
-  def correct_middle_page_sum
-    filter_update_by(correct_order: true).map { |update| middle_page(update) }.sum
+    updates = correct_updates ? filter_update_by(correct_order: true) : filter_update_by(correct_order: false).map(&:fixed)
+    updates.map { |update| update.middle_page }.sum 
   end
 
   def filter_update_by(correct_order:)
-    return @updates.select { |update| correct_order?(update) } if correct_order
-    @updates.reject { |update| correct_order?(update) }
+    correct_order ? @updates.select(&:correct_order?) : @updates.reject(&:correct_order?)
   end
 
-  def middle_page(update)
-    update[update.size/2]
-  end
-
-  def correct_order?(update)
-    already_met = []
-    update.each do |page|
-      if @rules.keys.include? page
-        return false unless (already_met - @rules[page]) == already_met
-      end
-      already_met << page
-    end
-    true
-  end
-
-  def find_first_wrong_number(update)
-    already_met = []
-    update.find do |number| 
-      is_wrong = @rules.keys.include?(number) && (already_met - @rules[number]) != already_met
-      already_met << number
-      is_wrong
-    end
-  end
+  private
 
   def rules_per_number(rules)
     rules_per_number = {}
@@ -76,12 +27,59 @@ class UpdatesRulesChecker
     end
     rules_per_number
   end
+
+  def instanciate_updates(updates)
+    updates.map do |update|
+      Update.new(update, @rules)
+    end
+  end
 end
 
 class Update
   def initialize(update, rules)
     @update = update
     @rules = rules    
+  end
+
+  def middle_page
+    @update[@update.size/2]
+  end
+
+  def fixed
+    original_update = @update.dup
+    until correct_order?
+      incorrect_page = first_incorrect_page
+      current_index = @update.index(incorrect_page)
+      new_index = min_index(@rules[incorrect_page])
+      @update.insert(new_index, @update.delete_at(current_index))
+    end
+    fixed_update = self.dup
+    @update = original_update
+    fixed_update
+  end
+
+  def correct_order?
+    already_met = []
+    @update.each do |page|
+      if @rules.keys.include? page
+        return false unless (already_met - @rules[page]) == already_met
+      end
+      already_met << page
+    end
+    true
+  end
+
+  def first_incorrect_page 
+    already_met = []
+    @update.find do |page| 
+      is_wrong = @rules.keys.include?(page) && (already_met - @rules[page]) != already_met
+      already_met << page
+      is_wrong
+    end
+  end
+
+  def min_index(pages)
+    pages.map { |page| @update.index(page) }.compact.min
   end
 end
 
@@ -91,4 +89,5 @@ updates = InputParser.cast_to_integers(updates.reject(&:empty?), ',')
 updates_rules_checker = UpdatesRulesChecker.new(rules, updates)
 
 puts "Part 1: #{updates_rules_checker.middle_page_sum(correct_updates: true)}"
-puts "Part 2: #{updates_rules_checker.wrong_middle_page_sum}"
+puts "Part 2: #{updates_rules_checker.middle_page_sum(correct_updates: false)}"
+puts "Part 2: #{updates_rules_checker.middle_page_sum(correct_updates: false)}"
